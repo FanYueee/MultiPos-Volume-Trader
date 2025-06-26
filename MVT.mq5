@@ -1,11 +1,11 @@
 //+------------------------------------------------------------------+
-//|                                        TradingVolumeBrush.mq5    |
+//|                                       MultiPos-Volume-Trader.mq5 |
 //|                                 Volume Baseline Trading System   |
 //|                                                                  |
 //+------------------------------------------------------------------+
 #property copyright "Copyright 2025"
 #property link      ""
-#property version   "1.00"
+#property version   "1.10"
 
 #include <Trade/Trade.mqh>
 
@@ -14,7 +14,7 @@ input double InpLotSize = 0.01;                    // Lot size
 input int    InpMagicNumber = 987654;              // Magic number
 input int    InpSlippage = 10;                     // Slippage points
 input bool   InpEnableDebug = true;                // Enable debug output
-input double InpMaxSpread = 1.00;                  // Maximum spread (1.00 for Gold, 3.0 for Forex)
+input int InpMaxSpread = 50;                     // Maximum spread in points (50 for Gold, 30 for Forex)
 input int    InpMinVolume = 10;                    // Minimum tick volume for trading
 input bool   InpEnableTimeFilter = true;           // Enable trading time filter
 input int    InpStartHour = 0;                     // Trading start hour (0-23)
@@ -334,10 +334,17 @@ void CleanupClosedPositions() {
 //+------------------------------------------------------------------+
 bool RiskManagementCheck() {
     // Check spread
-    double spread = SymbolInfoInteger(_Symbol, SYMBOL_SPREAD) * SymbolInfoDouble(_Symbol, SYMBOL_POINT);
-    if(spread > InpMaxSpread * SymbolInfoDouble(_Symbol, SYMBOL_POINT)) {
+    long spreadPoints = SymbolInfoInteger(_Symbol, SYMBOL_SPREAD);
+    double spread = spreadPoints * SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+    
+    if(InpEnableDebug) {
+        Print("📊 Current spread: ", spreadPoints, " points (", DoubleToString(spread, _Digits), ")");
+        Print("📊 Max allowed: ", InpMaxSpread, " points");
+    }
+    
+    if(spreadPoints > InpMaxSpread) {
         if(InpEnableDebug) {
-            Print("⚠️ Trading blocked - Spread too high: ", DoubleToString(spread, _Digits));
+            Print("⚠️ Trading blocked - Spread too high: ", spreadPoints, " points (", DoubleToString(spread, _Digits), ")");
         }
         return false;
     }
